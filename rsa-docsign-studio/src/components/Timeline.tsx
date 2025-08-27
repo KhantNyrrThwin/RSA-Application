@@ -18,11 +18,17 @@ export interface DocEvent {
 
 interface TimelineProps {
   events: DocEvent[];
-  onVerify: (id: string) => void;
+  onVerify?: (id: string) => void;
   onDecrypt?: (id: string) => void;
+  showHash?: boolean;
+  showSignature?: boolean;
+  showCiphertext?: boolean;
+  showIv?: boolean;
+  showWrappedKey?: boolean;
+  actions?: boolean;
 }
 
-export function Timeline({ events, onVerify, onDecrypt }: TimelineProps) {
+export function Timeline({ events, onVerify, onDecrypt, showHash = true, showSignature = true, showCiphertext = true, showIv = true, showWrappedKey = true, actions = true }: TimelineProps) {
   return (
     <div className="rounded-2xl border border-slate-700 bg-slate-900/60 p-4 h-[60vh] overflow-y-auto">
       <AnimatePresence initial={false}>
@@ -33,37 +39,43 @@ export function Timeline({ events, onVerify, onDecrypt }: TimelineProps) {
                 <div className="font-semibold">{e.filename}</div>
                 <div className="text-xs opacity-70">{(e.size / 1024).toFixed(2)} KB • {new Date(e.createdAt).toLocaleTimeString()}</div>
               </div>
-              <div className="flex items-center gap-2">
-                {onDecrypt && e.ciphertext && (
-                  <Button size="sm" onClick={() => onDecrypt(e.id)}>Decrypt</Button>
-                )}
-                <Button size="sm" variant="outline" onClick={() => onVerify(e.id)}>Verify Signature</Button>
-              </div>
+              {actions && (
+                <div className="flex items-center gap-2">
+                  {onDecrypt && e.ciphertext && (
+                    <Button size="sm" onClick={() => onDecrypt(e.id)}>Decrypt</Button>
+                  )}
+                  {onVerify && (
+                    <Button size="sm" variant="outline" onClick={() => onVerify(e.id)}>Verify Signature</Button>
+                  )}
+                </div>
+              )}
             </div>
             <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <div className="text-xs opacity-70 mb-1">SHA-256</div>
-                <pre className="text-xs bg-slate-800/70 p-2 rounded border border-slate-700 overflow-auto">{e.sha256}</pre>
-              </div>
-              {e.signature && (
+              {showHash && (
+                <div>
+                  <div className="text-xs opacity-70 mb-1">SHA-256</div>
+                  <pre className="text-xs bg-slate-800/70 p-2 rounded border border-slate-700 overflow-auto">{e.sha256}</pre>
+                </div>
+              )}
+              {showSignature && e.signature && (
                 <div>
                   <div className="text-xs opacity-70 mb-1">Signature (base64)</div>
                   <pre className="text-xs bg-slate-800/70 p-2 rounded border border-slate-700 overflow-auto">{e.signature}</pre>
                 </div>
               )}
-              {e.ciphertext && (
+              {showCiphertext && e.ciphertext && (
                 <div className="md:col-span-2">
                   <div className="text-xs opacity-70 mb-1">Ciphertext (base64)</div>
                   <pre className="text-xs bg-yellow-900/30 text-yellow-200 p-2 rounded border border-yellow-700/50 overflow-auto">{e.ciphertext}</pre>
                 </div>
               )}
-              {e.iv && (
+              {showIv && e.iv && (
                 <div>
                   <div className="text-xs opacity-70 mb-1">AES-GCM IV (base64)</div>
                   <pre className="text-xs bg-slate-800/70 p-2 rounded border border-slate-700 overflow-auto">{e.iv}</pre>
                 </div>
               )}
-              {e.wrappedKey && (
+              {showWrappedKey && e.wrappedKey && (
                 <div>
                   <div className="text-xs opacity-70 mb-1">Wrapped AES Key (RSA-OAEP, base64)</div>
                   <pre className="text-xs bg-slate-800/70 p-2 rounded border border-slate-700 overflow-auto">{e.wrappedKey}</pre>
