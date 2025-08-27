@@ -8,8 +8,13 @@ import {
   generateSigningKeyPair,
   signBytes,
   verifyBytes,
-  encryptBytes,
-  decryptBytes,
+  generateAesKey,
+  aesEncrypt,
+  aesDecrypt,
+  exportAesKeyRaw,
+  importAesKeyRaw,
+  arrayBufferToBase64,
+  base64ToArrayBuffer,
   exportPublicKeyJwk,
   exportPrivateKeyJwk,
 } from './utils/rsa'
@@ -44,8 +49,16 @@ function App() {
     const shaHex = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('')
     const signature = await signBytes(sigKeys.privateKey, new TextEncoder().encode(shaHex))
     let ciphertext: string | undefined
+    let ivB64: string | undefined
+    let wrappedKeyB64: string | undefined
     if (encryptToSelf) {
-      ciphertext = await encryptBytes(encKeys.publicKey, bytes)
+      const aes = await generateAesKey()
+      const { iv, ciphertext: aesCT } = await aesEncrypt(aes, bytes)
+      const rawAes = await exportAesKeyRaw(aes)
+      const wrapped = await crypto.subtle.encrypt({ name: 'RSA-OAEP' }, encKeys.publicKey, rawAes)
+      ciphertext = arrayBufferToBase64(aesCT)
+      ivB64 = arrayBufferToBase64(iv.buffer)
+      wrappedKeyB64 = arrayBufferToBase64(wrapped)
       if (tamper && ciphertext.length > 8) {
         ciphertext = ciphertext.slice(0, -8) + 'AAAAAAA='
       }
@@ -57,6 +70,8 @@ function App() {
       sha256: shaHex,
       signature,
       ciphertext,
+      iv: ivB64,
+      wrappedKey: wrappedKeyB64,
       createdAt: Date.now(),
     }
     setEvents((prev) => [evt, ...prev])
@@ -85,9 +100,11 @@ function App() {
     const idx = current.findIndex((e) => e.id === id)
     if (idx === -1) return
     const e = current[idx]
-    if (!e.ciphertext) return
+    if (!e.ciphertext || !e.iv || !e.wrappedKey) return
     try {
-      await decryptBytes(encKeys.privateKey, e.ciphertext)
+      const rawAes = await crypto.subtle.decrypt({ name: 'RSA-OAEP' }, encKeys.privateKey, base64ToArrayBuffer(e.wrappedKey))
+      const aes = await importAesKeyRaw(rawAes)
+      await aesDecrypt(aes, new Uint8Array(base64ToArrayBuffer(e.iv)), base64ToArrayBuffer(e.ciphertext))
       current[idx] = { ...e, decryptedOk: true }
     } catch {
       current[idx] = { ...e, decryptedOk: false, tampered: true }
