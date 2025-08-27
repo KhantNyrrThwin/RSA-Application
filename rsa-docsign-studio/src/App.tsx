@@ -133,10 +133,20 @@ function App() {
         <UploadArea onFile={onFile} disabled={!encKeys || !sigKeys} />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2">
-            <Timeline events={events} onVerify={onVerify} onDecrypt={encryptToSelf ? onDecrypt : undefined} />
+          {/* Sender POV: shows hash + signature (no decrypt) */}
+          <div className="space-y-3">
+            <div className="font-semibold">Sender POV</div>
+            <Timeline events={events} onVerify={onVerify} showCiphertext={false} showIv={false} showWrappedKey={false} />
           </div>
+          {/* Receiver POV: verify + decrypt (all fields) */}
+          <div className="space-y-3">
+            <div className="font-semibold">Receiver POV</div>
+            <Timeline events={events} onVerify={onVerify} onDecrypt={onDecrypt} />
+          </div>
+          {/* Observer POV: only sees ciphertext fields */}
           <div className="space-y-4">
+            <div className="font-semibold">Observer POV</div>
+            <Timeline events={events} actions={false} showHash={false} showSignature={false} showCiphertext={true} showIv={true} showWrappedKey={false} />
             {showKeys && (
               <KeyViewer title="My RSA Encryption Keys" publicJwk={pubJwk} privateJwk={privJwk} />
             )}
