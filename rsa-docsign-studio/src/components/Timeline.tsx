@@ -7,7 +7,9 @@ export interface DocEvent {
   size: number;
   sha256: string;
   signature?: string;
-  ciphertext?: string;
+  ciphertext?: string; // AES-GCM ciphertext (base64)
+  iv?: string; // AES-GCM IV (base64)
+  wrappedKey?: string; // RSA-OAEP wrapped AES key (base64)
   decryptedOk?: boolean;
   authentic?: boolean;
   tampered?: boolean;
@@ -53,6 +55,18 @@ export function Timeline({ events, onVerify, onDecrypt }: TimelineProps) {
                 <div className="md:col-span-2">
                   <div className="text-xs opacity-70 mb-1">Ciphertext (base64)</div>
                   <pre className="text-xs bg-yellow-900/30 text-yellow-200 p-2 rounded border border-yellow-700/50 overflow-auto">{e.ciphertext}</pre>
+                </div>
+              )}
+              {e.iv && (
+                <div>
+                  <div className="text-xs opacity-70 mb-1">AES-GCM IV (base64)</div>
+                  <pre className="text-xs bg-slate-800/70 p-2 rounded border border-slate-700 overflow-auto">{e.iv}</pre>
+                </div>
+              )}
+              {e.wrappedKey && (
+                <div>
+                  <div className="text-xs opacity-70 mb-1">Wrapped AES Key (RSA-OAEP, base64)</div>
+                  <pre className="text-xs bg-slate-800/70 p-2 rounded border border-slate-700 overflow-auto">{e.wrappedKey}</pre>
                 </div>
               )}
             </div>
