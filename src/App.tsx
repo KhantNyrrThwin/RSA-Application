@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { FormEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import "./App.css"
 
 // --- Type Definitions ---
 interface Agent {
@@ -380,16 +381,16 @@ export default function App() {
     const springTransition = { type: 'spring', stiffness: 120, damping: 10 };
 
     return (
-      <AnimatePresence>
-        <motion.div
-          key={message.id}
-          className={`relative p-4 rounded-xl shadow-lg my-2 max-w-lg ${isAlice ? 'bg-emerald-700 self-end' : isBob ? 'bg-sky-700 self-start' : isEve ? 'bg-red-700 self-start' : 'self-center'}`}
-          variants={bubbleVariants}
-          initial="hidden"
-          animate="visible"
-          transition={springTransition}
-          exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
-        >
+      // Corrected: The key is now on the top-level element in the list.
+      <motion.div
+        key={message.id}
+        className={`relative p-4 rounded-xl shadow-lg my-2 max-w-lg ${isAlice ? 'bg-emerald-700 self-end' : isBob ? 'bg-sky-700 self-start' : isEve ? 'bg-red-700 self-start' : 'self-center'}`}
+        variants={bubbleVariants}
+        initial="hidden"
+        animate="visible"
+        transition={springTransition}
+      >
+        <AnimatePresence>
           {/* Ciphertext message */}
           <motion.div
             className="font-mono text-yellow-300 text-sm break-all"
@@ -399,54 +400,54 @@ export default function App() {
           >
             {isEve ? 'Eavesdropping... 😈' : `🔒 Encrypted message: ${btoa(String.fromCharCode(...new Uint8Array(message.ciphertext))).substring(0, 50)}...`}
           </motion.div>
+        </AnimatePresence>
 
-          {/* Decrypted message - animates in */}
-          {message.isDecrypted && (
-            <motion.div
-              className={`mt-2 font-sans text-white`}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7, duration: 0.5 }}
+        {/* Decrypted message - animates in */}
+        {message.isDecrypted && (
+          <motion.div
+            className={`mt-2 font-sans text-white`}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7, duration: 0.5 }}
+          >
+            <h3 className="font-bold text-lg">{isBob ? 'Bob receives:' : 'Eve receives:'}</h3>
+            <p>{message.originalText}</p>
+            {message.isSigned && (
+              <span className={`text-xs mt-2 font-mono flex items-center`}>
+                Signature: {message.isVerified === true ? '✅ Authentic' : message.isVerified === false ? '❌ Forged' : 'Verifying...'}
+              </span>
+            )}
+          </motion.div>
+        )}
+
+        {/* Action buttons for Bob and Eve */}
+        {isBob && !message.isDecrypted && (
+          <div className="mt-2 text-right">
+            <button
+              onClick={() => handleDecryptMessage(message.id)}
+              className="bg-sky-600 hover:bg-sky-500 text-white text-sm font-bold py-1 px-3 rounded-full transition-all"
             >
-              <h3 className="font-bold text-lg">{isBob ? 'Bob receives:' : 'Eve receives:'}</h3>
-              <p>{message.originalText}</p>
-              {message.isSigned && (
-                <span className={`text-xs mt-2 font-mono flex items-center`}>
-                  Signature: {message.isVerified === true ? '✅ Authentic' : message.isVerified === false ? '❌ Forged' : 'Verifying...'}
-                </span>
-              )}
-            </motion.div>
-          )}
-
-          {/* Action buttons for Bob and Eve */}
-          {isBob && !message.isDecrypted && (
-            <div className="mt-2 text-right">
-              <button
-                onClick={() => handleDecryptMessage(message.id)}
-                className="bg-sky-600 hover:bg-sky-500 text-white text-sm font-bold py-1 px-3 rounded-full transition-all"
-              >
-                Decrypt
-              </button>
-            </div>
-          )}
-          {isAlice && !isEve && !message.isDecrypted && (
-            <div className="mt-2 flex space-x-2">
-              <button
-                onClick={() => handleTamperMessage(message.id)}
-                className="bg-red-600 hover:bg-red-500 text-white text-sm font-bold py-1 px-3 rounded-full transition-all"
-              >
-                Tamper
-              </button>
-              <button
-                onClick={() => setMessages(prev => prev.map(m => m.id === message.id ? {...m, isEve: true} as Message : m))}
-                className="bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold py-1 px-3 rounded-full transition-all"
-              >
-                Eavesdrop
-              </button>
-            </div>
-          )}
-        </motion.div>
-      </AnimatePresence>
+              Decrypt
+            </button>
+          </div>
+        )}
+        {isAlice && !isEve && !message.isDecrypted && (
+          <div className="mt-2 flex space-x-2">
+            <button
+              onClick={() => handleTamperMessage(message.id)}
+              className="bg-red-600 hover:bg-red-500 text-white text-sm font-bold py-1 px-3 rounded-full transition-all"
+            >
+              Tamper
+            </button>
+            <button
+              onClick={() => setMessages(prev => prev.map(m => m.id === message.id ? {...m, isEve: true} as Message : m))}
+              className="bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold py-1 px-3 rounded-full transition-all"
+            >
+              Eavesdrop
+            </button>
+          </div>
+        )}
+      </motion.div>
     );
   };
 
