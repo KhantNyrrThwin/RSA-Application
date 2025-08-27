@@ -39,8 +39,10 @@ function App() {
   const onFile = async (file: File) => {
     if (!encKeys || !sigKeys) return
     const bytes = new Uint8Array(await file.arrayBuffer())
-    // Hash then sign the raw file bytes (or hash bytes; signing raw is okay for demo)
-    const signature = await signBytes(sigKeys.privateKey, bytes)
+    // Compute SHA-256 (hex), then sign the SHA string bytes so verify uses the same input
+    const digest = await crypto.subtle.digest('SHA-256', bytes)
+    const shaHex = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('')
+    const signature = await signBytes(sigKeys.privateKey, new TextEncoder().encode(shaHex))
     let ciphertext: string | undefined
     if (encryptToSelf) {
       ciphertext = await encryptBytes(encKeys.publicKey, bytes)
@@ -48,9 +50,6 @@ function App() {
         ciphertext = ciphertext.slice(0, -8) + 'AAAAAAA='
       }
     }
-    // SHA-256 hex digest for display only (avoids pulling an extra util; reuse WCA digest)
-    const digest = await crypto.subtle.digest('SHA-256', bytes)
-    const shaHex = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('')
     const evt: DocEvent = {
       id: crypto.randomUUID(),
       filename: file.name,
@@ -70,8 +69,9 @@ function App() {
     if (idx === -1) return
     const e = current[idx]
     try {
-      const dummyBytes = new TextEncoder().encode(e.sha256)
-      const ok = await verifyBytes(sigKeys.publicKey, dummyBytes, e.signature || '')
+      // Verify over the SHA-256 hex string bytes, matching what we sign
+      const shaBytes = new TextEncoder().encode(e.sha256)
+      const ok = await verifyBytes(sigKeys.publicKey, shaBytes, e.signature || '')
       current[idx] = { ...e, authentic: ok }
     } catch {
       current[idx] = { ...e, authentic: false }
