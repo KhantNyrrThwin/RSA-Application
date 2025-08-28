@@ -112,6 +112,19 @@ function App() {
     setEvents(current)
   }
 
+  const onTamperSignature = (id: string) => {
+    const current = [...events]
+    const idx = current.findIndex((e) => e.id === id)
+    if (idx === -1) return
+    const e = current[idx]
+    // Flip a character in the signature (if present) to invalidate it
+    if (e.signature && e.signature.length > 5) {
+      const flipped = e.signature.substring(0, 5) + (e.signature[5] === 'A' ? 'B' : 'A') + e.signature.substring(6)
+      current[idx] = { ...e, signature: flipped, authentic: false }
+      setEvents(current)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-slate-100">
       <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
@@ -136,7 +149,7 @@ function App() {
           {/* Sender POV: shows hash + signature (no decrypt) */}
           <div className="space-y-3">
             <div className="font-semibold">Sender POV</div>
-            <Timeline events={events} onVerify={onVerify} showCiphertext={false} showIv={false} showWrappedKey={false} />
+            <Timeline events={events} onVerify={onVerify} onTamperSignature={onTamperSignature} showCiphertext={false} showIv={false} showWrappedKey={false} />
           </div>
           {/* Receiver POV: verify + decrypt (all fields) */}
           <div className="space-y-3">

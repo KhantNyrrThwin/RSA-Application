@@ -26,9 +26,10 @@ interface TimelineProps {
   showIv?: boolean;
   showWrappedKey?: boolean;
   actions?: boolean;
+  onTamperSignature?: (id: string) => void;
 }
 
-export function Timeline({ events, onVerify, onDecrypt, showHash = true, showSignature = true, showCiphertext = true, showIv = true, showWrappedKey = true, actions = true }: TimelineProps) {
+export function Timeline({ events, onVerify, onDecrypt, showHash = true, showSignature = true, showCiphertext = true, showIv = true, showWrappedKey = true, actions = true, onTamperSignature }: TimelineProps) {
   return (
     <div className="rounded-2xl border border-slate-700 bg-slate-900/60 p-4 h-[60vh] overflow-y-auto">
       <AnimatePresence initial={false}>
@@ -46,6 +47,9 @@ export function Timeline({ events, onVerify, onDecrypt, showHash = true, showSig
                   )}
                   {onVerify && (
                     <Button size="sm" variant="outline" onClick={() => onVerify(e.id)}>Verify Signature</Button>
+                  )}
+                  {onTamperSignature && (
+                    <Button size="sm" variant="destructive" onClick={() => onTamperSignature(e.id)}>Tamper Signature</Button>
                   )}
                 </div>
               )}
